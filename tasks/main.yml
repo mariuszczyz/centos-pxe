@@ -1,0 +1,66 @@
+---
+# tasks file for mariuszczyz.centos-pxe
+
+- name: Install all required software
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - xinetd 
+    - syslinux 
+    - tftp-server
+
+- name: Add iso mount entry to fstab
+  lineinfile:
+    path: /etc/fstab
+    regexp: "^/isos"
+    line: "{{ item.iso_location }}  {{ item.mount_point }}        auto loop       0 0"
+    backup: yes
+    mode: 0644
+    owner: root
+    group: root
+  with_items:
+    - "{{ isos }}"
+
+- name: Mount all
+  command: mount -a
+
+- name: Copy httpd pxe config
+  copy:
+    src: httpd-pxe.conf
+    dest: /etc/httpd/conf.d/httpd-pxe.conf
+    mode: 0640
+    owner: root
+    group: root
+  notify: restart httpd
+
+- name: Copy bootloader files
+  synchronize: 
+    src: /usr/share/syslinux/
+    dest: /var/lib/tftpboot/
+  delegate_to: "{{ inventory_hostname }}"
+
+- name: Create CentOS 7 TFTP directory
+  file:
+    path: /var/lib/tftpboot/centos7
+    state: directory
+
+- name: Copy CentOS 7 bootable kernel and initrd images
+  command: "cp /var/www/centos7/images/pxeboot/{{ item }} /var/lib/tftpboot/centos7/"
+  with_items:
+    - vmlinuz
+    - initrd.img
+
+- name: Create pxelinux.cfg directory
+  file:
+    path: /var/lib/tftpboot/pxelinux.cfg
+    state: directory
+
+- name: Copy default PXE config file
+  template:
+    src: default
+    dest: /var/lib/tftpboot/pxelinux.cfg/default
+    backup: yes
+    mode: 0644
+    owner: root
+    group: root

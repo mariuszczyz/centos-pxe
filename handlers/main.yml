@@ -1,0 +1,7 @@
+---
+# handlers file for mariuszczyz.centos-pxe
+
+- name: restart httpd
+  service:
+    name: httpd
+    state: restarted

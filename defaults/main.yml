@@ -1,0 +1,8 @@
+---
+# defaults file for mariuszczyz.centos-pxe
+
+# add ISO images here
+isos:
+- name: centos
+  iso_location: /isos/CentOS-7-x86_64-Minimal-1611.iso
+  mount_point: /var/www/centos7
