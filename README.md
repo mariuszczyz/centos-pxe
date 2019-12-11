@@ -100,17 +100,15 @@ left out of this role.
 
 ### Kickstart Files
 
-The minimum changes needed for the kickstart installation files to work:
+The minimum changes needed for the Kickstart installation files to work:
 
-`rootpw --iscrypted PASSWORD_HASH` - root password hash
-`url --url="http://192.168.1.200/centos7"` - IP address of the server containing
-base OS installation packages
+`rootpw --iscrypted PASSWORD_HASH` - root password hash  
 
 #### Instructions on how to create a Kickstart root password hash
 
-Run: `openssl passwd -6`
+Run this command on the CLI: `openssl passwd -6`
 
-Available algorith options:
+Available algorithm options:
 
 ```shell
  -6                  SHA512-based password algorithm
