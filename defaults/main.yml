@@ -1,6 +1,8 @@
 ---
 # defaults file for mariuszczyz.centos-pxe
 
+# Refer to README.md for detailed explanation of each variable.
+
 # PXE ROLE SECTION
 # name: name of the operating system
 # iso_location: location on the PXE boot server where OS installation ISO images are stored

@@ -42,7 +42,7 @@ They will be accessible locally at:
 
 `Kickstart Files` - this role deploys CentOS7/8 & Fedora 31 unattended installation
 Anaconda Kickstart files from templates. They are placed in a kickstart directory
-in the web server root directory and are accessible by clients.
+in the web server root directory and are accessible by all clients.
 
 - <http://hostname.localdomain/kickstart/>
 
@@ -222,6 +222,6 @@ BSD
 
 ## Author Information
 
-Author: Mariusz Czyz
-Date: 12/2019
+Author: Mariusz Czyz  
+Date: 12/2019  
 mariuszczyz.com

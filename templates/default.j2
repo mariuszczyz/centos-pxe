@@ -1,4 +1,4 @@
-# display a menu with a list of installation options 
+# display a menu with a list of installation options
 default menu.c32
 # show prompt, 0 - disabled, 1 - enabled
 prompt 0
@@ -10,41 +10,36 @@ ONTIMEOUT 1
 menu title ########## PXE Boot Menu ##########
 
 label 1
-menu label ^1) Boot from local drive. Do not install anything. 
+menu label ^1) Boot from local drive. Do not install anything.
 localboot 0
 menu default
 
 label 2
 menu label ^2) Install Fedora 31 Manually with graphical GUI
 kernel fedora31/vmlinuz
-append initrd=fedora31/initrd.img method=http://192.168.1.109/fedora31 devfs=nomount
+append initrd=fedora31/initrd.img method=http://{{ ansible_default_ipv4.address }}/fedora31 devfs=nomount
 
 label 3
 menu label ^3) Install CentOS 7 Manually with graphical GUI
 kernel centos7/vmlinuz
-append initrd=centos7/initrd.img method=http://192.168.1.109/centos7 devfs=nomount
+append initrd=centos7/initrd.img method=http://{{ ansible_default_ipv4.address }}/centos7 devfs=nomount
 
 label 4
 menu label ^4) Install CentOS 8 Manually with graphical GUI
 kernel centos8/vmlinuz
-append initrd=centos8/initrd.img method=http://192.168.1.109/centos8 devfs=nomount
+append initrd=centos8/initrd.img method=http://{{ ansible_default_ipv4.address }}/centos8 devfs=nomount
 
 label 5
 menu label ^5) Base Unattended Fedora 31 Kickstart Install in Text Mode
 kernel fedora31/vmlinuz
-append vga=normal initrd=fedora31/initrd.img ks=http://192.168.1.109/kickstart/fedora-base.cfg ksdevice=bootif
+append vga=normal initrd=fedora31/initrd.img ks=http://{{ ansible_default_ipv4.address }}/kickstart/fedora-base.cfg ksdevice=bootif
 
 label 5
 menu label ^5) Base Unattended CentOS 7 Kickstart Install in Text Mode
 kernel centos7/vmlinuz
-append vga=normal initrd=centos7/initrd.img ks=http://192.168.1.109/kickstart/centos7-base.cfg ksdevice=bootif
+append vga=normal initrd=centos7/initrd.img ks=http://{{ ansible_default_ipv4.address }}/kickstart/centos7-base.cfg ksdevice=bootif
 
 label 6
 menu label ^6) Base Unattended CentOS 8 Kickstart Install in Text Mode
 kernel centos8/vmlinuz
-append vga=normal initrd=centos8/initrd.img ks=http://192.168.1.109/kickstart/centos8-base.cfg ksdevice=bootif
-
-label 7
-menu label ^7) Diskless CentOS 7 Live
-kernel centos7/vmlinuz
-append initrd=centos7/initrd.img root=nfs:192.168.1.109:/exported/centos7 rw selinux=0
+append vga=normal initrd=centos8/initrd.img ks=http://{{ ansible_default_ipv4.address }}/kickstart/centos8-base.cfg ksdevice=bootif
