@@ -1,2 +1,41 @@
 ---
 # defaults file for mariuszczyz.centos-pxe
+
+# PXE ROLE SECTION
+# name: name of the operating system
+# iso_location: location on the PXE boot server where OS installation ISO images are stored
+# mount_point - this is where the installation ISO will be mounted,
+#               needed by Apache to serve packages during the unattenaded installation process.
+
+ISOS_PATH: /isos
+
+ISOS:
+- NAME: centos7
+  ISO_DOWNLOAD_URL: http://mirrors.gigenet.com/centos/7.7.1908/isos/x86_64/CentOS-7-x86_64-Everything-1908.iso
+  ISO_LOCATION: /isos/CentOS-7-x86_64-Everything-1908.iso
+  MOUNT_POINT: /var/www/html/centos7
+- NAME: centos8
+  ISO_DOWNLOAD_URL: http://mirrors.gigenet.com/centos/8/isos/x86_64/CentOS-8-x86_64-1905-dvd1.iso
+  ISO_LOCATION: /isos/CentOS-8-x86_64-1905-dvd1.iso
+  MOUNT_POINT: /var/www/html/centos8
+- NAME: fedora31
+  ISO_DOWNLOAD_URL: https://mirror.steadfastnet.com/fedora/releases/31/Server/x86_64/iso/Fedora-Server-dvd-x86_64-31-1.9.iso
+  ISO_LOCATION: /isos/Fedora-Server-dvd-x86_64-31-1.9.iso
+  MOUNT_POINT: /var/www/html/fedora31
+
+KICKSTART_HASHED_ROOT_PASSWORD:
+NON_ROOT_USER_NAME:
+NON_ROOT_USER_PASSWORD:
+TIMEZONE:
+NTP_SERVERS:
+
+FEDORA_HOSTNAME: fedora.home.local
+FEDORA_NETWORK_INSTALLATION_URL: http://{{ ansible_default_ipv4.address }}/fedora31
+
+CENTOS7_HOSTNAME: centos7.home.local
+CENTOS7_NETWORK_INSTALLATION_URL: http://{{ ansible_default_ipv4.address }}/centos7
+
+# CentOS 8 configured to use a public repo for now
+CENTOS8_HOSTNAME: centos8.home.local
+CENTOS8_BASE_OS_URL: http://mirror.steadfastnet.com/centos/8/BaseOS/x86_64/os/
+CENTOS8_APPSTREAM_REPO_URL: http://mirror.steadfastnet.com/centos/8/AppStream/x86_64/kickstart/

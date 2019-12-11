@@ -23,48 +23,46 @@
 
 - name: Download installation iso images
   get_url:
-    url: "{{ item.iso_download_url }}"
-    dest: "{{ item.iso_location }}"
+    url: "{{ item.ISO_DOWNLOAD_URL }}"
+    dest: "{{ item.ISO_LOCATION }}"
     mode: 0640
-  loop: "{{ isos }}"
+  loop: "{{ ISOS }}"
 
 - name: Create mountpoint directories
   file:
-    path: "/var/www/{{ item.name }}"
+    path: "/var/www/html/{{ item.NAME }}"
     state: directory
-  loop: "{{ isos }}"
+  loop: "{{ ISOS }}"
   notify: restart httpd
 
 - name: Unmount existing ISOs
   mount:
-    path: "{{ item.mount_point }}"
-    src: "{{ item.iso_location }}"
+    path: "{{ item.MOUNT_POINT }}"
+    src: "{{ item.ISO_LOCATION }}"
     fstype: iso9660
     opts: loop
     state: unmounted
-  loop: "{{ isos }}"
+  loop: "{{ ISOS }}"
   notify: restart httpd
 
 - name: Mount ISOs read-only
   mount:
-    path: "{{ item.mount_point }}"
-    src: "{{ item.iso_location }}"
+    path: "{{ item.MOUNT_POINT }}"
+    src: "{{ item.ISO_LOCATION }}"
     fstype: iso9660
     opts: loop
     state: mounted
-  loop: "{{ isos }}"
+  loop: "{{ ISOS }}"
   notify: restart httpd
 
 - name: Copy custom Apache config template for each distro
   template:
     src: httpd-pxe.conf.j2
-    dest: "/etc/httpd/conf.d/{{ item.name }}.conf"
+    dest: /etc/httpd/conf.d/httpd-pxe.conf
     mode: 0640
     owner: root
     group: root
   notify: restart httpd
-  with_items:
-    - "{{ isos }}"
 
 - name: Copy other Apache configuration files
   copy:
@@ -85,27 +83,25 @@
 
 - name: Create TFTP directories
   file:
-    path: /var/lib/tftpboot/{{ item.name }}
+    path: /var/lib/tftpboot/{{ item.NAME }}
     state: directory
     mode: 0755
-    owner: root
-    group: root
   with_items:
-    - "{{ isos }}"
+    - "{{ ISOS }}"
 
 - name: Copy bootable kernel images for all OSs
   synchronize:
-    src: "/var/www/{{ item.name }}/images/pxeboot/vmlinuz"
-    dest: "/var/lib/tftpboot/{{ item.name }}/vmlinuz"
+    src: "{{ item.MOUNT_POINT }}/images/pxeboot/vmlinuz"
+    dest: "/var/lib/tftpboot/{{ item.NAME }}/vmlinuz"
   delegate_to: "{{ inventory_hostname }}"
-  loop: "{{ isos }}"
+  loop: "{{ ISOS }}"
 
 - name: Copy initrd images for all OSs
   synchronize:
-    src: "/var/www/{{ item.name }}/images/pxeboot/initrd.img"
-    dest: "/var/lib/tftpboot/{{ item.name }}/initrd.img"
+    src: "/var/www/html/{{ item.NAME }}/images/pxeboot/initrd.img"
+    dest: "/var/lib/tftpboot/{{ item.NAME }}/initrd.img"
   delegate_to: "{{ inventory_hostname }}"
-  loop: "{{ isos }}"
+  loop: "{{ ISOS }}"
 
 - name: Create pxelinux.cfg directory
   file:

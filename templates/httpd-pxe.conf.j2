@@ -1,9 +1,5 @@
-{% for os in isos %}
-Alias /{{ os.name }} /var/www/{{ os.name }}/
-
-<Directory /var/www/{{ os.name }}/>
-Options Indexes FollowSymLinks
-Order Deny,Allow
-Allow from all
+<Directory /var/www/html/>
+    Options Indexes FollowSymLinks
+    Order Deny,Allow
+    Allow from all
 </Directory>
-{% endfor %}
