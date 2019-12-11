@@ -1,0 +1,52 @@
+# Install OS instead of upgrade
+install
+# Keyboard layouts
+keyboard 'us'
+# Root password, use "pwkickstart" or "openssl passwd -6" to set it
+rootpw --iscrypted {{ KICKSTART_HASHED_ROOT_PASSWORD }}
+# Use network installation
+url --url="{{ CENTOS7_NETWORK_INSTALLATION_URL }}"
+# System language
+lang en_US.UTF-8
+# System authorization information
+auth  --useshadow  --passalgo=sha512
+# Use text mode install
+text
+# SELinux configuration
+selinux --disabled
+# Do not configure the X Window System
+skipx
+
+eula --agreed
+
+services --enabled=NetworkManager,sshd
+
+# Firewall configuration
+firewall --disabled
+# Network information
+network --bootproto=dhcp
+# Reboot after installation
+reboot
+# System timezone
+timezone {{ TIMEZONE }}
+# System bootloader configuration
+bootloader --location=mbr
+# Clear the Master Boot Record
+zerombr
+# Partition clearing information
+clearpart --all --initlabel
+# Disk partitioning information
+autopart
+# part /boot --asprimary --fstype="ext4" --size=1024
+# part swap --recommended
+# part / --fstype="xfs" --grow --size=1
+
+user --groups=wheel --name={{ NON_ROOT_USER_NAME }} --password={{ NON_ROOT_USER_PASSWORD }} --iscrypted --gecos="{{ NON_ROOT_USER_NAME }}"
+
+%packages --nobase --ignoremissing
+@core
+@base
+git
+vim-enhanced
+wget
+%end

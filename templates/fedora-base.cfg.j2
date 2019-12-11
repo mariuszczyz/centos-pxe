@@ -1,0 +1,41 @@
+auth  --useshadow  --enablemd5
+bootloader --location=mbr
+zerombr
+ignoredisk --only-use=vda
+clearpart --all --initlabel
+text
+firewall --disable
+firstboot --disable
+keyboard --vckeymap=us --xlayouts='us'
+lang en_US.UTF-8
+network --hostname={{ FEDORA_HOSTNAME }}
+rootpw --iscrypted {{ KICKSTART_HASHED_ROOT_PASSWORD }}
+skipx
+logging --level=info
+url --url={{ FEDORA_NETWORK_INSTALLATION_URL }}
+selinux --disabled
+services --enabled="chronyd"
+timezone {{ TIMEZONE }} --isUtc --ntpservers={{ NTP_SERVERS }}
+user --groups=wheel --name={{ NON_ROOT_USER_NAME }} --password={{ NON_ROOT_USER_PASSWORD }} --iscrypted --gecos="{{ NON_ROOT_USER_NAME }}"
+autopart --type=lvm
+
+#part /boot --fstype="ext4" --ondisk=vda --size=1024 --label=/boot
+#part pv.217 --fstype="lvmpv" --ondisk=vda --size=17412
+#volgroup fedora --pesize=4096 pv.217
+#logvol / --fstype="xfs" --grow --size=2048 --label="/" --name=root --vgname=fedora
+#logvol swap --fstype="swap" --size=2047 --name=swap --vgname=fedora
+
+%packages
+@^server-product-environment
+@guest-agents
+@headless-management
+%end
+
+%addon com_redhat_kdump --disable --reserve-mb='128'
+%end
+
+%anaconda
+pwpolicy root --minlen=6 --minquality=1 --notstrict --nochanges --notempty
+pwpolicy user --minlen=6 --minquality=1 --notstrict --nochanges --emptyok
+pwpolicy luks --minlen=6 --minquality=1 --notstrict --nochanges --notempty
+%end

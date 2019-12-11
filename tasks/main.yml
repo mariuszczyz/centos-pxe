@@ -2,65 +2,143 @@
 # tasks file for mariuszczyz.centos-pxe
 
 - name: Install all required software
-  yum:
+  package:
     name: "{{ item }}"
     state: present
-  with_items:
-    - xinetd 
-    - syslinux 
+  loop:
+    - xinetd
+    - syslinux
     - tftp-server
 
-- name: Add iso mount entry to fstab
-  lineinfile:
-    path: /etc/fstab
-    regexp: "^/isos"
-    line: "{{ item.iso_location }}  {{ item.mount_point }}        auto loop       0 0"
-    backup: yes
-    mode: 0644
+- name: Enable and start XINETd service
+  service:
+    name: xinetd
+    state: started
+    enabled: True
+
+- name: Create iso images directory
+  file:
+    path: "{{ ISOS_PATH }}"
+    state: directory
+
+- name: Download installation iso images
+  get_url:
+    url: "{{ item.iso_download_url }}"
+    dest: "{{ item.iso_location }}"
+    mode: 0640
+  loop: "{{ isos }}"
+
+- name: Create mountpoint directories
+  file:
+    path: "/var/www/{{ item.name }}"
+    state: directory
+  loop: "{{ isos }}"
+  notify: restart httpd
+
+- name: Unmount existing ISOs
+  mount:
+    path: "{{ item.mount_point }}"
+    src: "{{ item.iso_location }}"
+    fstype: iso9660
+    opts: loop
+    state: unmounted
+  loop: "{{ isos }}"
+  notify: restart httpd
+
+- name: Mount ISOs read-only
+  mount:
+    path: "{{ item.mount_point }}"
+    src: "{{ item.iso_location }}"
+    fstype: iso9660
+    opts: loop
+    state: mounted
+  loop: "{{ isos }}"
+  notify: restart httpd
+
+- name: Copy custom Apache config template for each distro
+  template:
+    src: httpd-pxe.conf.j2
+    dest: "/etc/httpd/conf.d/{{ item.name }}.conf"
+    mode: 0640
+    owner: root
+    group: root
+  notify: restart httpd
+  with_items:
+    - "{{ isos }}"
+
+- name: Copy other Apache configuration files
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/httpd/conf.d/{{ item }}.conf"
+    mode: 0640
+    owner: root
+    group: root
+  notify: restart httpd
+  loop:
+    - autoindex.conf
+
+- name: Copy bootloader files
+  synchronize:
+    src: /usr/share/syslinux/
+    dest: /var/lib/tftpboot/
+  delegate_to: "{{ inventory_hostname }}"
+
+- name: Create TFTP directories
+  file:
+    path: /var/lib/tftpboot/{{ item.name }}
+    state: directory
+    mode: 0755
     owner: root
     group: root
   with_items:
     - "{{ isos }}"
 
-- name: Mount all
-  command: mount -a
-
-- name: Copy httpd pxe config
-  copy:
-    src: httpd-pxe.conf
-    dest: /etc/httpd/conf.d/httpd-pxe.conf
-    mode: 0640
-    owner: root
-    group: root
-  notify: restart httpd
-
-- name: Copy bootloader files
-  synchronize: 
-    src: /usr/share/syslinux/
-    dest: /var/lib/tftpboot/
+- name: Copy bootable kernel images for all OSs
+  synchronize:
+    src: "/var/www/{{ item.name }}/images/pxeboot/vmlinuz"
+    dest: "/var/lib/tftpboot/{{ item.name }}/vmlinuz"
   delegate_to: "{{ inventory_hostname }}"
+  loop: "{{ isos }}"
 
-- name: Create CentOS 7 TFTP directory
-  file:
-    path: /var/lib/tftpboot/centos7
-    state: directory
-
-- name: Copy CentOS 7 bootable kernel and initrd images
-  command: "cp /var/www/centos7/images/pxeboot/{{ item }} /var/lib/tftpboot/centos7/"
-  with_items:
-    - vmlinuz
-    - initrd.img
+- name: Copy initrd images for all OSs
+  synchronize:
+    src: "/var/www/{{ item.name }}/images/pxeboot/initrd.img"
+    dest: "/var/lib/tftpboot/{{ item.name }}/initrd.img"
+  delegate_to: "{{ inventory_hostname }}"
+  loop: "{{ isos }}"
 
 - name: Create pxelinux.cfg directory
   file:
     path: /var/lib/tftpboot/pxelinux.cfg
     state: directory
+    mode: 0755
+    owner: root
+    group: root
 
 - name: Copy default PXE config file
   template:
-    src: default
+    src: default.j2
     dest: /var/lib/tftpboot/pxelinux.cfg/default
-    backup: yes
     mode: 0644
     owner: root
     group: root
+
+- name: Make sure Kicsktart web root directory exists and create if not
+  file:
+    path: /var/www/html/kickstart
+    state: directory
+    mode: 0755
+    owner: apache
+    group: apache
+
+- name: Copy Kickstart files
+  template:
+    src: "{{ item }}.cfg.j2"
+    dest: "/var/www/html/kickstart/{{ item }}.cfg"
+    mode: 0644
+    owner: apache
+    group: apache
+  loop:
+    - centos7-base
+    - centos8-base
+    - fedora-base

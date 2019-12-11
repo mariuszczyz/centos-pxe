@@ -5,3 +5,4 @@
   service:
     name: httpd
     state: restarted
+  listen: restart httpd

@@ -1,0 +1,35 @@
+lang en_US.UTF-8
+keyboard --vckeymap=us --xlayouts='us'
+bootloader --location=mbr --append="rhgb quiet crashkernel=auto"
+zerombr
+ignoredisk --only-use=sda
+autopart --type=lvm
+clearpart --all --initlabel
+text
+repo --name="AppStream" --baseurl={{ CENTOS8_APPSTREAM_REPO_URL }}
+url --url="{{ CENTOS8_BASE_OS_URL }}"
+network  --bootproto=dhcp --ipv6=auto --activate --hostname={{ CENTOS8_HOSTNAME }}
+# Root password, use "pwkickstart" or "openssl passwd -6" to set it
+rootpw --iscrypted "{{ KICKSTART_HASHED_ROOT_PASSWORD }}"
+auth --useshadow --passalgo=sha512
+firstboot --disable
+selinux --disabled
+firewall --disabled
+skipx
+services --disabled="chronyd"
+timezone {{ TIMEZONE }} --isUtc --nontp
+user --groups=wheel --name={{ NON_ROOT_USER_NAME }} --password={{ NON_ROOT_USER_PASSWORD }} --iscrypted --gecos="{{ NON_ROOT_USER_NAME }}"
+
+%packages
+@^minimal-environment
+%end
+
+%addon com_redhat_kdump --disable --reserve-mb='auto'
+
+%end
+
+%anaconda
+pwpolicy root --minlen=6 --minquality=1 --notstrict --nochanges --notempty
+pwpolicy user --minlen=6 --minquality=1 --notstrict --nochanges --emptyok
+pwpolicy luks --minlen=6 --minquality=1 --notstrict --nochanges --notempty
+%end

@@ -2,14 +2,23 @@
 dependencies: []
 galaxy_info:
   author: Mariusz Czyz
-  description: CentOS 7 PXE Service Installation and Configuration Role
+  description: CentOS 7/8 and Fedora PXE Boot Server Role
   license: BSD
   min_ansible_version: 2.4
   platforms:
     - name: EL
       versions:
         - 7
+        - 8
+    - name: Fedora
+      versions:
+        - 30
+        - 31
   galaxy_tags:
     - centos
-    - system
+    - fedora
     - pxe
+    - tftp
+    - kickstart
+    - unattended
+
