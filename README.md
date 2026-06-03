@@ -1,8 +1,8 @@
-# CentOS 7/8 & Fedora PXE Boot Unattended OS Installation and Configuration Role
+# CentOS Stream & Fedora PXE Boot Unattended OS Installation Role
 
 This role configures the basic framework for a local PXE boot
-environment allowing to perform unattended installation of CentOS 7,
-CentOS 8, Fedora 31 and more (with custom configuration).
+environment allowing to perform unattended installation of CentOS Stream 9,
+CentOS Stream 10, Fedora 40, Fedora 41 and more (with custom configuration).
 
 It installs and configures the following:
 
@@ -16,12 +16,12 @@ The mirror can be also used later for additional RPM packages installations.
 This role pre-configures the PXE service with the following:
 
 - Boot from local drive. Do not install anything
-- Install Fedora 31 Manually with graphical GUI
-- Install CentOS 7 Manually with graphical GUI
-- Install CentOS 8 Manually with graphical GUI
-- Base Unattended Fedora 31 Kickstart Install in Text Mode
-- Base Unattended CentOS 7 Kickstart Install in Text Mode
-- Base Unattended CentOS 8 Kickstart Install in Text Mode
+- Install Fedora 40 Manually with graphical GUI
+- Install CentOS Stream 9 Manually with graphical GUI
+- Install CentOS Stream 10 Manually with graphical GUI
+- Base Unattended Fedora 40 Kickstart Install in Text Mode
+- Base Unattended CentOS Stream 9 Kickstart Install in Text Mode
+- Base Unattended CentOS Stream 10 Kickstart Install in Text Mode
 
 It also installs all the necessary kernel images needed for remote PXE clients
 to boot up properly.
@@ -30,17 +30,17 @@ to boot up properly.
 to create a locally accessible server-generated directory listings of
 all RPM packages.
 
-The local mirror will immitate the same directory structure as publically
+The local mirror will imitate the same directory structure as publicly
 available mirrors.
 
 They will be accessible locally at:
 (replace hostname.localdomain with own address)
 
-- <http://hostname.localdomain/fedora31>
-- <http://hostname.localdomain/centos7>
-- <http://hostname.localdomain/centos8>
+- <http://hostname.localdomain/fedora-40>
+- <http://hostname.localdomain/centos-stream-9>
+- <http://hostname.localdomain/centos-stream-10>
 
-`Kickstart Files` - this role deploys CentOS7/8 & Fedora 31 unattended installation
+`Kickstart Files` - this role deploys CentOS Stream 9/10 & Fedora 40 unattended installation
 Anaconda Kickstart files from templates. They are placed in a kickstart directory
 in the web server root directory and are accessible by all clients.
 
@@ -49,8 +49,8 @@ in the web server root directory and are accessible by all clients.
 ## Additional Notes
 
 When building a new VM in VirtualBox or KVM allocate a minimum of 2 GB of RAM
-for the guest. The CentOS installation process will most likely fail if less
-than that is used. The amount of RAM can be lowered following a successfull
+for the guest. The installation process will most likely fail if less
+than that is used. The amount of RAM can be lowered following a successful
 installation.
 
 The end user is encouraged to review and customize the Kickstart configuration
@@ -75,12 +75,6 @@ installation is to rely on post installation configuration customization.
 Standard installation of Apache web server is required in order for the
 Kickstart process to access the installation packages locally.
 
-A simple Apache role can be installed from Galaxy:
-
-`ansible-galaxy install mariuszczyz.centos_apache`
-
-- <https://galaxy.ansible.com/mariuszczyz/centos_apache>
-
 ### DHCPd
 
 Working local DHCP service.
@@ -102,7 +96,7 @@ left out of this role.
 
 The minimum changes needed for the Kickstart installation files to work:
 
-`rootpw --iscrypted PASSWORD_HASH` - root password hash  
+`rootpw --iscrypted PASSWORD_HASH` - root password hash
 
 #### Instructions on how to create a Kickstart root password hash
 
@@ -137,32 +131,30 @@ like partitioning, timezone, additional packages, etc.
 | Variable | Comment | Example |
 | --- | ------- | ------- |
 | ISOS_PATH | Directory where ISO installation images will be stored locally | /isos |
-| NAME | Sperating system name | fedora31 |
-| ISO_LOCATION | Full path to ISO image | /isos/CentOS-7-x86_64-Everything-1908.iso |
-| MOUNT_POINT | Full path to where the ISO image should be mounted on the local file system | /var/www/centos7 |
-| KICKSTART_HASHED_ROOT_PASSWORD | Kickstart hased root password. Use "pwkickstart" or "openssl passwd -6" to generate | bEzYf1S49$yu |
+| NAME | Operating system name | fedora-40 |
+| ISO_LOCATION | Full path to ISO image | /isos/Fedora-Server-dvd-x86_64-40-1.14.iso |
+| MOUNT_POINT | Full path to where the ISO image should be mounted on the local file system | /var/www/html/fedora-40 |
+| KICKSTART_HASHED_ROOT_PASSWORD | Kickstart hashed root password. Use "pwkickstart" or "openssl passwd -6" to generate | bEzYf1S49$yu |
 | NON_ROOT_USER_NAME | Non root admin user account to create on the new system | mariusz |
-| NON_ROOT_USER_PASSWORD | Kickstart hased user password. Use "pwkickstart" or "openssl passwd -6" to generate | bEzYf1S49$yu |
+| NON_ROOT_USER_PASSWORD | Kickstart hashed user password. Use "pwkickstart" or "openssl passwd -6" to generate | bEzYf1S49$yu |
 | TIMEZONE | Local timezone | America/Chicago |
 | NTP_SERVERS | Network time servers. Local or public. | ntp.localdomain |
-| FEDORA_HOSTNAME | Default hostname for the new Fedora server | fedora31.localdomain |
-| FEDORA_NETWORK_INSTALLATION_URL | This is where Anaconda will fetch Fedora packages from | <http://mirror.steadfastnet.com/fedora/releases/31/Everything/x86_64/os/> |
-| CENTOS7_HOSTNAME | Default hostname for the new Fedora server | centos7.localdomain |
-| CENTOS7_NETWORK_INSTALLATION_URL | This is where Anaconda will fetch CentOS packages from | <http://192.168.1.109/centos7> |
-| CENTOS8_HOSTNAME | Default hostname for the new Fedora server | centos8.localdomain |
-| CENTOS8_BASE_OS_URL | CentOS 8 BaseOS packages repository URL | <http://mirror.steadfastnet.com/centos/8/BaseOS/x86_64/os/> |
-| CENTOS8_APPSTREAM_REPO_URL | CentOS 8 AppStream packages repository URL | <http://mirror.steadfastnet.com/centos/8/AppStream/x86_64/kickstart/> |
+| FEDORA_HOSTNAME | Default hostname for the new Fedora server | fedora-40.home.local |
+| FEDORA_NETWORK_INSTALLATION_URL | This is where Anaconda will fetch Fedora packages from | http://mirror.steadfastnet.com/fedora/releases/40/Server/x86_64/os/ |
+| CENTOS_STREAM_9_HOSTNAME | Default hostname for CentOS Stream 9 | centos-stream-9.home.local |
+| CENTOS_STREAM_9_NETWORK_INSTALLATION_URL | This is where Anaconda will fetch CentOS Stream 9 packages from | http://mirror.steadfastnet.com/centos-stream/9/stream/x86_64/os/ |
+| CENTOS_STREAM_10_HOSTNAME | Default hostname for CentOS Stream 10 | centos-stream-10.home.local |
+| CENTOS_STREAM_10_NETWORK_INSTALLATION_URL | This is where Anaconda will fetch CentOS Stream 10 packages from | http://mirror.steadfastnet.com/centos-stream/10/stream/x86_64/os/ |
 
 ## Dependencies
 
-[mariuszczyz.centos_apache](https://galaxy.ansible.com/mariuszczyz/centos_apache)
 [mariuszczyz.centos_dhcpd](https://galaxy.ansible.com/mariuszczyz/centos_dhcpd)
 
 Install the dependencies from Ansible Galaxy with `requirements.yml`
 
 ```yaml
+# requirements.yml
 # Install from Ansible Galaxy
-- src: mariuszczyz.centos_apache
 - src: mariuszczyz.centos_dhcpd
 ```
 
@@ -201,15 +193,16 @@ Then run this to install all dependencies from Ansible Galaxy:
 ### Run it
 
 If you want to run this role individually create a new file:
-`playbook.yml` (name it however you wish btw) with the following content:
+`playbook.yml` (name it however you wish) with the following content:
 
 ```yaml
 - hosts: servers
-  user: YOUR USER
-  become: True
+  user: YOUR_USER
+  become: true
 
   roles:
-    - { role: mariuszczyz.centos_pxe, tags: ['centos_pxe'] }
+    - role: mariuszczyz.centos_pxe
+      tags: ['centos_pxe']
 ```
 
 Run it:
@@ -218,10 +211,10 @@ Run it:
 
 ## License
 
-BSD
+BSD-3-Clause
 
 ## Author Information
 
-Author: Mariusz Czyz  
-Date: 12/2019  
+Author: Mariusz Czyz
+Date: 06/2026
 mariuszczyz.com

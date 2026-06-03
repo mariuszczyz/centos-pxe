@@ -2,7 +2,7 @@
 # handlers file for mariuszczyz.centos-pxe
 
 - name: restart httpd
-  service:
+  ansible.builtin.service:
     name: httpd
     state: restarted
   listen: restart httpd

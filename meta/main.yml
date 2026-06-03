@@ -1,19 +1,20 @@
 ---
-dependencies: []
 galaxy_info:
+  role_name: centos-pxe
   author: Mariusz Czyz
-  description: CentOS 7/8 and Fedora PXE Boot Server Role
-  license: BSD
-  min_ansible_version: 2.4
+  description: CentOS Stream and Fedora PXE Boot Server Role
+  company: None
+  license: BSD-3-Clause
+  min_ansible_version: "2.15"
   platforms:
-    - name: EL
-      versions:
-        - 7
-        - 8
     - name: Fedora
       versions:
-        - 30
-        - 31
+        - "40"
+        - "41"
+    - name: EL
+      versions:
+        - "9"
+        - "10"
   galaxy_tags:
     - centos
     - fedora
@@ -21,3 +22,6 @@ galaxy_info:
     - tftp
     - kickstart
     - unattended
+    - installation
+    - network-boot
+dependencies: []

@@ -1,5 +1,43 @@
-<Directory /var/www/html/>
-    Options Indexes FollowSymLinks
-    Order Deny,Allow
-    Allow from all
-</Directory>
+# PXE HTTPD Configuration
+# Apache 2.4+ compatible
+
+<VirtualHost *:80>
+    ServerName {{ ansible_default_ipv4.address | default('0.0.0.0') }}
+    DocumentRoot /var/www/html
+
+    <Directory /var/www/html>
+        Options Indexes FollowSymLinks
+        AllowOverride None
+        Require all granted
+    </Directory>
+
+    # ISO mount points
+    {% for iso in ISOS %}
+    Alias /{{ iso.NAME }} {{ iso.MOUNT_POINT }}
+    <Directory {{ iso.MOUNT_POINT }}>
+        Options Indexes FollowSymLinks
+        AllowOverride None
+        Require all granted
+    </Directory>
+    {% endfor %}
+
+    # Kickstart files
+    Alias /kickstart /var/www/html/kickstart
+    <Directory /var/www/html/kickstart>
+        Options Indexes FollowSymLinks
+        AllowOverride None
+        Require all granted
+    </Directory>
+
+    # TFTP boot files
+    Alias /tftpboot /var/lib/tftpboot
+    <Directory /var/lib/tftpboot>
+        Options Indexes FollowSymLinks
+        AllowOverride None
+        Require all granted
+    </Directory>
+
+    # Logging
+    ErrorLog /var/log/httpd/pxe_error.log
+    CustomLog /var/log/httpd/pxe_access.log combined
+</VirtualHost>
