@@ -1,0 +1,98 @@
+---
+argument_specs:
+  main:
+    short_description: Configure a PXE boot server
+    description:
+      - Installs and configures TFTP, syslinux PXE bootloader, Apache-served
+        installation trees, and Kickstart files for Enterprise Linux 9/10 and Fedora.
+    options:
+      pxe_isos_path:
+        type: str
+        default: /isos
+        description: Directory where installation ISO images are stored.
+      pxe_isos:
+        type: list
+        elements: dict
+        required: true
+        description: Installation ISO images to download, mount, and serve.
+        options:
+          name:
+            type: str
+            required: true
+            description: Short OS name. Used in TFTP and HTTP paths.
+          download_url:
+            type: str
+            required: true
+            description: URL to download the ISO image from.
+          iso_path:
+            type: str
+            required: true
+            description: Local path of the ISO image.
+          mount_point:
+            type: str
+            required: true
+            description: Mount point. Must live under /var/www/html so Apache serves it.
+      pxe_kickstarts:
+        type: list
+        elements: dict
+        required: true
+        description: Kickstart files to deploy and to list in the PXE menu.
+        options:
+          name:
+            type: str
+            required: true
+            description: Kickstart template base name. Must match templates/<name>.cfg.j2.
+          iso:
+            type: str
+            required: true
+            description: pxe_isos entry that provides the kernel and initrd for this entry.
+          label:
+            type: str
+            required: true
+            description: PXE boot menu label.
+      pxe_kickstart_hashed_root_password:
+        type: str
+        required: true
+        no_log: true
+        description: Hashed root password for Kickstart files. Generate with openssl passwd -6.
+      pxe_non_root_user_name:
+        type: str
+        required: true
+        description: Non-root administrator user created by Kickstart installs.
+      pxe_non_root_user_password:
+        type: str
+        required: true
+        no_log: true
+        description: Hashed password for the non-root user. Generate with openssl passwd -6.
+      pxe_timezone:
+        type: str
+        required: true
+        description: System timezone for Kickstart installs, for example America/Chicago.
+      pxe_ntp_servers:
+        type: str
+        default: ""
+        description: Comma-separated NTP servers for Kickstart installs. Empty leaves installer defaults.
+      pxe_el9_hostname:
+        type: str
+        default: el9.home.local
+        description: Hostname set by the EL9 Kickstart file.
+      pxe_el9_install_url:
+        type: str
+        default: "http://{{ ansible_default_ipv4['address'] }}/el9"
+        description: Repository URL the EL9 installer reads packages from.
+      pxe_el10_hostname:
+        type: str
+        default: el10.home.local
+        description: Hostname set by the EL10 Kickstart file.
+      pxe_el10_install_url:
+        type: str
+        default: "http://{{ ansible_default_ipv4['address'] }}/el10"
+        description: Repository URL the EL10 installer reads packages from.
+      pxe_fedora_hostname:
+        type: str
+        default: fedora.home.local
+        description: Hostname set by the Fedora Kickstart file.
+      pxe_fedora_install_url:
+        type: str
+        default: "http://{{ ansible_default_ipv4['address'] }}/fedora"
+        description: Repository URL the Fedora installer reads packages from.

@@ -1,0 +1,21 @@
+text
+lang en_US.UTF-8
+keyboard --vckeymap=us --xlayouts='us'
+timezone {{ pxe_timezone }} --utc{% if pxe_ntp_servers %} --ntpservers={{ pxe_ntp_servers }}{% endif +%}
+network --bootproto=dhcp --device=link --activate --hostname={{ pxe_el9_hostname }}
+url --url="{{ pxe_el9_install_url }}"
+rootpw --iscrypted "{{ pxe_kickstart_hashed_root_password }}"
+user --groups=wheel --name={{ pxe_non_root_user_name }} --password="{{ pxe_non_root_user_password }}" --iscrypted --gecos="{{ pxe_non_root_user_name }}"
+selinux --disabled
+firewall --disabled
+skipx
+services --enabled=sshd,chronyd
+bootloader --location=mbr
+zerombr
+clearpart --all --initlabel
+autopart --type=lvm
+reboot
+
+%packages
+@^minimal-environment
+%end

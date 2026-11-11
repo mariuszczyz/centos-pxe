@@ -1,27 +1,17 @@
 ---
 galaxy_info:
-  role_name: centos-pxe
+  role_name: centos_pxe
+  namespace: mariuszczyz
   author: Mariusz Czyz
-  description: CentOS Stream and Fedora PXE Boot Server Role
-  company: None
+  description: PXE boot server for Enterprise Linux 9/10 and Fedora with TFTP, Apache, and Kickstart
   license: BSD-3-Clause
   min_ansible_version: "2.15"
   platforms:
-    - name: Fedora
-      versions:
-        - "40"
-        - "41"
     - name: EL
       versions:
         - "9"
         - "10"
-  galaxy_tags:
-    - centos
-    - fedora
-    - pxe
-    - tftp
-    - kickstart
-    - unattended
-    - installation
-    - network-boot
-dependencies: []
+    - name: Fedora
+      versions:
+        - "43"
+        - "44"

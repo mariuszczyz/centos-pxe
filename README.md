@@ -1,213 +1,152 @@
-# CentOS Stream & Fedora PXE Boot Unattended OS Installation Role
+# PXE Boot Server Ansible Role
 
-This role configures the basic framework for a local PXE boot
-environment allowing to perform unattended installation of CentOS Stream 9,
-CentOS Stream 10, Fedora 40, Fedora 41 and more (with custom configuration).
+This role builds a PXE boot server. It configures TFTP with the syslinux
+bootloader, serves installation trees through Apache, and deploys Kickstart
+files for unattended installs. Supported targets: Enterprise Linux 9,
+Enterprise Linux 10, and Fedora.
 
-It installs and configures the following:
+## Platform matrix
 
-`Installation ISOs & Local RPM Repository` - if the installation ISOs do not
-exist locally they will be downloaded and mounted. Once mounted, their content
-will be used to generate a local RPM mirror used during the installation process.
-The mirror can be also used later for additional RPM packages installations.
+The role is tested on these operating systems:
 
-`TFTP server & PXE` - we need this to allow the network clients to boot via PXE.
-
-This role pre-configures the PXE service with the following:
-
-- Boot from local drive. Do not install anything
-- Install Fedora 40 Manually with graphical GUI
-- Install CentOS Stream 9 Manually with graphical GUI
-- Install CentOS Stream 10 Manually with graphical GUI
-- Base Unattended Fedora 40 Kickstart Install in Text Mode
-- Base Unattended CentOS Stream 9 Kickstart Install in Text Mode
-- Base Unattended CentOS Stream 10 Kickstart Install in Text Mode
-
-It also installs all the necessary kernel images needed for remote PXE clients
-to boot up properly.
-
-`Apache Web Server` - with very little pre-configuration it'll be used
-to create a locally accessible server-generated directory listings of
-all RPM packages.
-
-The local mirror will imitate the same directory structure as publicly
-available mirrors.
-
-They will be accessible locally at:
-(replace hostname.localdomain with own address)
-
-- <http://hostname.localdomain/fedora-40>
-- <http://hostname.localdomain/centos-stream-9>
-- <http://hostname.localdomain/centos-stream-10>
-
-`Kickstart Files` - this role deploys CentOS Stream 9/10 & Fedora 40 unattended installation
-Anaconda Kickstart files from templates. They are placed in a kickstart directory
-in the web server root directory and are accessible by all clients.
-
-- <http://hostname.localdomain/kickstart/>
-
-## Additional Notes
-
-When building a new VM in VirtualBox or KVM allocate a minimum of 2 GB of RAM
-for the guest. The installation process will most likely fail if less
-than that is used. The amount of RAM can be lowered following a successful
-installation.
-
-The end user is encouraged to review and customize the Kickstart configuration
-templates. In their current form they are very basic. All of them assume the
-following:
-
-- automatic partitioning with LVM
-- SELinux off
-- firewall off
-- minimal software selection
-- root login allowed
-- single non-root administrator user
-- DHCP client network configuration
-
-The idea for doing as little as possible with Anaconda and Kickstart
-installation is to rely on post installation configuration customization.
+| OS | Versions |
+| --- | --- |
+| Rocky Linux | 9, 10 |
+| AlmaLinux | 9, 10 |
+| CentOS Stream | 9, 10 |
+| Fedora | 43, 44 |
 
 ## Requirements
 
-### Apache
+- Apache HTTP Server preinstalled. The role writes files into
+  `/etc/httpd/conf.d/` and restarts `httpd`. The
+  [mariuszczyz.centos_apache](https://galaxy.ansible.com/mariuszczyz/centos_apache)
+  Galaxy role installs it.
+- A working DHCP server. Point `next-server` and the boot file name at the
+  PXE host. The
+  [mariuszczyz.centos_dhcpd](https://galaxy.ansible.com/mariuszczyz/centos_dhcpd)
+  Galaxy role configures one.
+- At least 2 GB of RAM on PXE-installed guests. The EL9 and EL10 installer
+  fails with less. You can lower the allocation after the install.
 
-Standard installation of Apache web server is required in order for the
-Kickstart process to access the installation packages locally.
+## Role Variables
 
-### DHCPd
+`meta/argument_specs.yml` validates input and documents every variable.
+`defaults/main.yml` carries the applied default values. User variables
+override them.
 
-Working local DHCP service.
+| Variable | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `pxe_isos_path` | str | no | `/isos` | Directory where installation ISO images are stored. |
+| `pxe_isos` | list of dict | yes | three EL9/EL10/Fedora entries | Installation ISO images to download, mount, and serve. |
+| `pxe_kickstarts` | list of dict | yes | three base entries | Kickstart files to deploy and to list in the PXE menu. |
+| `pxe_kickstart_hashed_root_password` | str | yes | none | Hashed root password for Kickstart files. Generate with `openssl passwd -6`. |
+| `pxe_non_root_user_name` | str | yes | none | Non-root administrator user created by Kickstart installs. |
+| `pxe_non_root_user_password` | str | yes | none | Hashed password for the non-root user. Generate with `openssl passwd -6`. |
+| `pxe_timezone` | str | yes | none | System timezone for Kickstart installs, for example `America/Chicago`. |
+| `pxe_ntp_servers` | str | no | `""` | Comma-separated NTP servers for Kickstart installs. Empty leaves installer defaults. |
+| `pxe_el9_hostname` | str | no | `el9.home.local` | Hostname set by the EL9 Kickstart file. |
+| `pxe_el9_install_url` | str | no | `http://<host>/el9` | Repository URL the EL9 installer reads packages from. |
+| `pxe_el10_hostname` | str | no | `el10.home.local` | Hostname set by the EL10 Kickstart file. |
+| `pxe_el10_install_url` | str | no | `http://<host>/el10` | Repository URL the EL10 installer reads packages from. |
+| `pxe_fedora_hostname` | str | no | `fedora.home.local` | Hostname set by the Fedora Kickstart file. |
+| `pxe_fedora_install_url` | str | no | `http://<host>/fedora` | Repository URL the Fedora installer reads packages from. |
 
-Alternatively, a dedicated DHCP can be set up on the PXE boot server by using
-this role: [CentOS & Fedora DHCP Server Installation and Configuration Ansible
-Role](https://galaxy.ansible.com/mariuszczyz/centos_dhcpd).
+`pxe_isos` entries use these keys. All are required strings:
 
-### Operating System Installation ISO Images
+| Key | Description |
+| --- | --- |
+| `name` | Short OS name. Used in TFTP and HTTP paths. |
+| `download_url` | URL to download the ISO image from. |
+| `iso_path` | Local path of the ISO image. |
+| `mount_point` | Mount point. Must live under `/var/www/html` so Apache serves it. |
 
-This role assumes the location of operating system installation ISO images is in
-`/isos/`. Leave it as is or change it in the `defaults/main.yml`. However,
-the ISO images must be downloaded prior to running this role. Otherwise,
-it will not have access to all the files it needs to properly set up the
-pre-boot environment. The task of downloading the ISOs has been purposely
-left out of this role.
+`pxe_kickstarts` entries use these keys. All are required strings:
 
-### Kickstart Files
+| Key | Description |
+| --- | --- |
+| `name` | Kickstart template base name. Must match `templates/<name>.cfg.j2`. |
+| `iso` | `pxe_isos` entry that provides the kernel and initrd for this entry. |
+| `label` | PXE boot menu label. |
 
-The minimum changes needed for the Kickstart installation files to work:
+The default `pxe_isos` list downloads Rocky 9, Rocky 10, and Fedora 44 ISO
+images. The installed `<host>` value comes from the primary IPv4 address of
+the PXE server.
 
-`rootpw --iscrypted PASSWORD_HASH` - root password hash
+## Kickstart notes
 
-#### Instructions on how to create a Kickstart root password hash
-
-Run this command on the CLI: `openssl passwd -6`
-
-Available algorithm options:
+Generate password hashes with `openssl passwd -6`. The command prompts for
+the password and prints the hash:
 
 ```shell
- -6                  SHA512-based password algorithm
- -5                  SHA256-based password algorithm
- -apr1               MD5-based password algorithm, Apache variant
- -1                  MD5-based password algorithm
- -aixmd5             AIX MD5-based password algorithm
- -crypt              Standard Unix password algorithm (default)
-```
-
-It'll prompt for the password and output the hash:
-
-_Note: not a real password below_
-
-```shell
+$ openssl passwd -6
 Password:
 Verifying - Password:
 $6$gdGbs42fZoKUVwQH$eY2nId.oONxK9MneuM58Vg2NPEuftngWmwfK09YW4DQLs3Hcq5F5HEohDEcM.Ci3p8gQrVuygTfScim7MY6QI1
 ```
 
-The rest of the setting can be customized optionally to fit your own needs,
-like partitioning, timezone, additional packages, etc.
+The shipped templates assume all of the following:
 
-## Role Variables
+- automatic partitioning with LVM
+- SELinux disabled
+- firewall disabled
+- DHCP network configuration
+- one administrator user in the `wheel` group
+- text mode install with a reboot at the end
 
-| Variable | Comment | Example |
-| --- | ------- | ------- |
-| ISOS_PATH | Directory where ISO installation images will be stored locally | /isos |
-| NAME | Operating system name | fedora-40 |
-| ISO_LOCATION | Full path to ISO image | /isos/Fedora-Server-dvd-x86_64-40-1.14.iso |
-| MOUNT_POINT | Full path to where the ISO image should be mounted on the local file system | /var/www/html/fedora-40 |
-| KICKSTART_HASHED_ROOT_PASSWORD | Kickstart hashed root password. Use "pwkickstart" or "openssl passwd -6" to generate | bEzYf1S49$yu |
-| NON_ROOT_USER_NAME | Non root admin user account to create on the new system | mariusz |
-| NON_ROOT_USER_PASSWORD | Kickstart hashed user password. Use "pwkickstart" or "openssl passwd -6" to generate | bEzYf1S49$yu |
-| TIMEZONE | Local timezone | America/Chicago |
-| NTP_SERVERS | Network time servers. Local or public. | ntp.localdomain |
-| FEDORA_HOSTNAME | Default hostname for the new Fedora server | fedora-40.home.local |
-| FEDORA_NETWORK_INSTALLATION_URL | This is where Anaconda will fetch Fedora packages from | http://mirror.steadfastnet.com/fedora/releases/40/Server/x86_64/os/ |
-| CENTOS_STREAM_9_HOSTNAME | Default hostname for CentOS Stream 9 | centos-stream-9.home.local |
-| CENTOS_STREAM_9_NETWORK_INSTALLATION_URL | This is where Anaconda will fetch CentOS Stream 9 packages from | http://mirror.steadfastnet.com/centos-stream/9/stream/x86_64/os/ |
-| CENTOS_STREAM_10_HOSTNAME | Default hostname for CentOS Stream 10 | centos-stream-10.home.local |
-| CENTOS_STREAM_10_NETWORK_INSTALLATION_URL | This is where Anaconda will fetch CentOS Stream 10 packages from | http://mirror.steadfastnet.com/centos-stream/10/stream/x86_64/os/ |
+Review and adjust the templates before production use.
 
-## Dependencies
+## Breaking changes in this release
 
-[mariuszczyz.centos_dhcpd](https://galaxy.ansible.com/mariuszczyz/centos_dhcpd)
+- All role variables renamed to `pxe_` snake_case. For example, `ISOS` is
+  now `pxe_isos` and `TIMEZONE` is now `pxe_timezone`.
+- The role now enables `tftp.socket` through systemd socket activation. The
+  xinetd service is gone. xinetd does not exist on Fedora 34 and later.
+- CentOS 7 and CentOS 8 support dropped. The templates for them are deleted.
+- Kickstart parameters are required: `pxe_kickstart_hashed_root_password`,
+  `pxe_non_root_user_name`, `pxe_non_root_user_password`, `pxe_timezone`.
+  The role fails fast when one is missing.
+- Fixed the Apache autoindex config destination. The old role copied it to
+  `/etc/httpd/conf.d/autoindex.conf.conf`.
 
-Install the dependencies from Ansible Galaxy with `requirements.yml`
+## Testing
 
-```yaml
-# requirements.yml
-# Install from Ansible Galaxy
-- src: mariuszczyz.centos_dhcpd
+`molecule test` runs the full sequence on all eight platforms in the matrix
+with Podman. ISO downloads are disabled in tests. The kickstart files and
+the PXE menu still render.
+
+The EL10 images need a CPU with x86-64-v3 support (Haswell generation or
+newer). On older CPUs the EL10 containers fail to start.
+
+Prerequisites:
+
+```shell
+pip install --user molecule "molecule-plugins[podman]"
+ansible-galaxy collection install -r requirements.yml
+```
+
+Run the tests from the repository root:
+
+```shell
+molecule test
 ```
 
 ## Example Playbook
 
-### Manual
-
-Fetch this role from Ansible Galaxy manually:
-
-`ansible-galaxy install mariuszczyz.centos_pxe`
-
-### Not Manual
-
-#### Galaxy
-
-Or include this role from Ansible Galaxy via `requirements.yml`
-
 ```yaml
-# requirements.yml
-# Install from Ansible Galaxy
-- src: mariuszczyz.centos_pxe
-```
-
-#### Github option
-
-```yaml
-# requirements.yml
-# Install from Github repository
-- src: https://www.github.com/mariuszczyz/centos_pxe
-```
-
-Then run this to install all dependencies from Ansible Galaxy:
-
-`ansible-galaxy install -r requirements.yml`
-
-### Run it
-
-If you want to run this role individually create a new file:
-`playbook.yml` (name it however you wish) with the following content:
-
-```yaml
-- hosts: servers
-  user: YOUR_USER
+- hosts: pxe_servers
   become: true
 
   roles:
-    - role: mariuszczyz.centos_pxe
-      tags: ['centos_pxe']
+    - role: centos_pxe
 ```
 
-Run it:
+## Dependencies
 
-`ansible-playbook -i hosts playbook.yml`
+- [mariuszczyz.centos_apache](https://galaxy.ansible.com/mariuszczyz/centos_apache):
+  installs Apache.
+- [mariuszczyz.centos_dhcpd](https://galaxy.ansible.com/mariuszczyz/centos_dhcpd):
+  optional DHCP server for the PXE network.
 
 ## License
 
@@ -215,6 +154,4 @@ BSD-3-Clause
 
 ## Author Information
 
-Author: Mariusz Czyz
-Date: 06/2026
-mariuszczyz.com
+Mariusz Czyz

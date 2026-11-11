@@ -1,0 +1,17 @@
+---
+pxe_isos: []
+pxe_kickstarts:
+  - name: el9-base
+    iso: el9
+    label: Base unattended EL9 kickstart install (text mode)
+  - name: el10-base
+    iso: el10
+    label: Base unattended EL10 kickstart install (text mode)
+  - name: fedora-base
+    iso: fedora
+    label: Base unattended Fedora kickstart install (text mode)
+pxe_kickstart_hashed_root_password: "$6$rounds=656000$testsalt$K7H1uL8e6Wm1D3r5c0sT9yB4vN2xQ6zA8pE3iO7uY1tR5wS9dF2gH6jK0lM4nP8qB3cV6xZ1yT5rW9eQ0uI4oA7sD"
+pxe_non_root_user_name: tester
+pxe_non_root_user_password: "$6$rounds=656000$testsalt$K7H1uL8e6Wm1D3r5c0sT9yB4vN2xQ6zA8pE3iO7uY1tR5wS9dF2gH6jK0lM4nP8qB3cV6xZ1yT5rW9eQ0uI4oA7sD"
+pxe_timezone: Etc/UTC
+pxe_ntp_servers: time.example.com

@@ -1,0 +1,105 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  tasks:
+    - name: Check PXE packages are installed
+      ansible.builtin.command: rpm -q syslinux tftp-server httpd
+      register: pxe_pkgs
+      changed_when: false
+      failed_when: false
+
+    - name: Assert PXE packages are installed
+      ansible.builtin.assert:
+        that:
+          - pxe_pkgs.rc == 0
+
+    - name: Check xinetd is not installed
+      ansible.builtin.command: rpm -q xinetd
+      register: xinetd_pkg
+      changed_when: false
+      failed_when: false
+
+    - name: Assert xinetd is not installed
+      ansible.builtin.assert:
+        that:
+          - xinetd_pkg.rc != 0
+
+    - name: Check the TFTP socket is enabled
+      ansible.builtin.command: systemctl is-enabled tftp.socket
+      register: tftp_enabled
+      changed_when: false
+
+    - name: Check the TFTP socket is active
+      ansible.builtin.command: systemctl is-active tftp.socket
+      register: tftp_active
+      changed_when: false
+
+    - name: Assert the TFTP socket is enabled and active
+      ansible.builtin.assert:
+        that:
+          - tftp_enabled.stdout == "enabled"
+          - tftp_active.stdout == "active"
+
+    - name: Check PXE, Apache, and kickstart files exist
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: pxe_stats
+      loop:
+        - /var/lib/tftpboot/pxelinux.cfg/default
+        - /etc/httpd/conf.d/httpd-pxe.conf
+        - /etc/httpd/conf.d/autoindex.conf
+        - /var/www/html/kickstart/el9-base.cfg
+        - /var/www/html/kickstart/el10-base.cfg
+        - /var/www/html/kickstart/fedora-base.cfg
+
+    - name: Assert files exist
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+      loop: "{{ pxe_stats.results }}"
+
+    - name: Read the Apache PXE config
+      ansible.builtin.slurp:
+        src: /etc/httpd/conf.d/httpd-pxe.conf
+      register: httpd_pxe
+
+    - name: Assert Apache config uses 2.4 authorization syntax
+      ansible.builtin.assert:
+        that:
+          - "'Require all granted' in httpd_pxe.content | b64decode"
+          - "'Order Deny,Allow' not in httpd_pxe.content | b64decode"
+
+    - name: Read the PXE menu
+      ansible.builtin.slurp:
+        src: /var/lib/tftpboot/pxelinux.cfg/default
+      register: pxe_menu
+
+    - name: Assert the menu has kickstart entries and unique labels
+      vars:
+        labels: "{{ pxe_menu.content | b64decode | regex_findall('(?m)^label (.+)$') }}"
+      ansible.builtin.assert:
+        that:
+          - "'ks=http://' in pxe_menu.content | b64decode"
+          - "labels | length == labels | unique | length"
+          - "labels | length == 4"
+
+    - name: Read the EL9 kickstart
+      ansible.builtin.slurp:
+        src: /var/www/html/kickstart/el9-base.cfg
+      register: el9_ks
+
+    - name: Assert kickstart uses modern syntax
+      vars:
+        ks: "{{ el9_ks.content | b64decode }}"
+      ansible.builtin.assert:
+        that:
+          - "'rootpw --iscrypted' in ks"
+          - "'url --url=' in ks"
+          - "'auth --useshadow' not in ks"
+          - "'%anaconda' not in ks"
+          - "'%addon' not in ks"
+
+    - name: Validate the Apache configuration
+      ansible.builtin.command: apachectl configtest
+      changed_when: false
