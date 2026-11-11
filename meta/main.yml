@@ -4,7 +4,7 @@ galaxy_info:
   namespace: mariuszczyz
   author: Mariusz Czyz
   description: PXE boot server for Enterprise Linux 9/10 and Fedora with TFTP, Apache, and Kickstart
-  license: BSD-3-Clause
+  license: MIT
   min_ansible_version: "2.15"
   platforms:
     - name: EL
