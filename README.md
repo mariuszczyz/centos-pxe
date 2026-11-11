@@ -150,7 +150,7 @@ molecule test
 
 ## License
 
-BSD-3-Clause
+MIT
 
 ## Author Information
 
