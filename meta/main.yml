@@ -1,5 +1,4 @@
 ---
-dependencies: []
 galaxy_info:
   role_name: centos_pxe
   namespace: mariuszczyz
