@@ -1,0 +1,84 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: podman
+platforms:
+  - name: rocky9
+    image: docker.io/rockylinux/rockylinux:9
+    pre_build_image: false
+    privileged: true
+    command: /usr/sbin/init
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup
+    groups:
+      - pxe
+  - name: rocky10
+    image: docker.io/rockylinux/rockylinux:10
+    pre_build_image: false
+    privileged: true
+    command: /usr/sbin/init
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup
+    groups:
+      - pxe
+  - name: almalinux9
+    image: docker.io/library/almalinux:9
+    pre_build_image: false
+    privileged: true
+    command: /usr/sbin/init
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup
+    groups:
+      - pxe
+  - name: almalinux10
+    image: docker.io/library/almalinux:10
+    pre_build_image: false
+    privileged: true
+    command: /usr/sbin/init
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup
+    groups:
+      - pxe
+  - name: centosstream9
+    image: quay.io/centos/centos:stream9
+    pre_build_image: false
+    privileged: true
+    command: /usr/sbin/init
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup
+    groups:
+      - pxe
+  - name: centosstream10
+    image: quay.io/centos/centos:stream10
+    pre_build_image: false
+    privileged: true
+    command: /usr/sbin/init
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup
+    groups:
+      - pxe
+  - name: fedora43
+    image: registry.fedoraproject.org/fedora:43
+    pre_build_image: false
+    privileged: true
+    command: /usr/sbin/init
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup
+    groups:
+      - pxe
+  - name: fedora44
+    image: registry.fedoraproject.org/fedora:44
+    pre_build_image: false
+    privileged: true
+    command: /usr/sbin/init
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup
+    groups:
+      - pxe
+provisioner:
+  name: ansible
+verifier:
+  name: ansible
+scenario:
+  name: default

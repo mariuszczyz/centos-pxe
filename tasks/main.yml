@@ -1,140 +1,122 @@
 ---
-# tasks file for mariuszczyz.centos-pxe
+# tasks file for centos-pxe
 
-- name: Install all required software
-  package:
-    name: "{{ item }}"
+- name: Install PXE server packages
+  ansible.builtin.package:
+    name:
+      - syslinux
+      - tftp-server
     state: present
-  loop:
-    - xinetd
-    - syslinux
-    - tftp-server
 
-- name: Enable and start XINETd service
-  service:
-    name: xinetd
+- name: Enable and start the TFTP socket
+  ansible.builtin.service:
+    name: tftp.socket
     state: started
-    enabled: True
+    enabled: true
 
-- name: Create iso images directory
-  file:
-    path: "{{ ISOS_PATH }}"
+- name: Create the ISO images directory
+  ansible.builtin.file:
+    path: "{{ pxe_isos_path }}"
     state: directory
+    owner: root
+    group: root
+    mode: "0755"
 
-- name: Download installation iso images
-  get_url:
-    url: "{{ item.ISO_DOWNLOAD_URL }}"
-    dest: "{{ item.ISO_LOCATION }}"
-    mode: 0640
-  loop: "{{ ISOS }}"
+- name: Download installation ISO images
+  ansible.builtin.get_url:
+    url: "{{ item.download_url }}"
+    dest: "{{ item.iso_path }}"
+    mode: "0640"
+  loop: "{{ pxe_isos }}"
 
-- name: Create mountpoint directories
-  file:
-    path: "/var/www/html/{{ item.NAME }}"
-    state: directory
-  loop: "{{ ISOS }}"
-  notify: restart httpd
-
-- name: Unmount existing ISOs
-  mount:
-    path: "{{ item.MOUNT_POINT }}"
-    src: "{{ item.ISO_LOCATION }}"
+- name: Mount ISOs read-only under the web root
+  ansible.posix.mount:
+    path: "{{ item.mount_point }}"
+    src: "{{ item.iso_path }}"
     fstype: iso9660
-    opts: loop
-    state: unmounted
-  loop: "{{ ISOS }}"
-  notify: restart httpd
-
-- name: Mount ISOs read-only
-  mount:
-    path: "{{ item.MOUNT_POINT }}"
-    src: "{{ item.ISO_LOCATION }}"
-    fstype: iso9660
-    opts: loop
+    opts: ro,loop
     state: mounted
-  loop: "{{ ISOS }}"
-  notify: restart httpd
+  loop: "{{ pxe_isos }}"
+  notify: Restart httpd
 
-- name: Copy custom Apache config template for each distro
-  template:
-    src: httpd-pxe.conf.j2
+- name: Copy the Apache PXE configuration
+  ansible.builtin.copy:
+    src: httpd-pxe.conf
     dest: /etc/httpd/conf.d/httpd-pxe.conf
-    mode: 0640
     owner: root
     group: root
-  notify: restart httpd
+    mode: "0640"
+  notify: Restart httpd
 
-- name: Copy other Apache configuration files
-  copy:
-    src: "{{ item }}"
-    dest: "/etc/httpd/conf.d/{{ item }}.conf"
-    mode: 0640
+- name: Copy the Apache autoindex configuration
+  ansible.builtin.copy:
+    src: autoindex.conf
+    dest: /etc/httpd/conf.d/autoindex.conf
     owner: root
     group: root
-  notify: restart httpd
-  loop:
-    - autoindex.conf
+    mode: "0640"
+  notify: Restart httpd
 
-- name: Copy bootloader files
-  synchronize:
+- name: Copy the syslinux bootloader files
+  ansible.builtin.copy:
     src: /usr/share/syslinux/
     dest: /var/lib/tftpboot/
-  delegate_to: "{{ inventory_hostname }}"
+    remote_src: true
+    mode: preserve
+    directory_mode: "0755"
 
-- name: Create TFTP directories
-  file:
-    path: /var/lib/tftpboot/{{ item.NAME }}
+- name: Create TFTP boot directories
+  ansible.builtin.file:
+    path: "/var/lib/tftpboot/{{ item.name }}"
     state: directory
-    mode: 0755
-  with_items:
-    - "{{ ISOS }}"
+    mode: "0755"
+  loop: "{{ pxe_isos }}"
 
-- name: Copy bootable kernel images for all OSs
-  synchronize:
-    src: "{{ item.MOUNT_POINT }}/images/pxeboot/vmlinuz"
-    dest: "/var/lib/tftpboot/{{ item.NAME }}/vmlinuz"
-  delegate_to: "{{ inventory_hostname }}"
-  loop: "{{ ISOS }}"
+- name: Copy bootable kernel images
+  ansible.builtin.copy:
+    remote_src: true
+    src: "{{ item.mount_point }}/images/pxeboot/vmlinuz"
+    dest: "/var/lib/tftpboot/{{ item.name }}/vmlinuz"
+    mode: "0644"
+  loop: "{{ pxe_isos }}"
 
-- name: Copy initrd images for all OSs
-  synchronize:
-    src: "/var/www/html/{{ item.NAME }}/images/pxeboot/initrd.img"
-    dest: "/var/lib/tftpboot/{{ item.NAME }}/initrd.img"
-  delegate_to: "{{ inventory_hostname }}"
-  loop: "{{ ISOS }}"
+- name: Copy initrd images
+  ansible.builtin.copy:
+    remote_src: true
+    src: "{{ item.mount_point }}/images/pxeboot/initrd.img"
+    dest: "/var/lib/tftpboot/{{ item.name }}/initrd.img"
+    mode: "0644"
+  loop: "{{ pxe_isos }}"
 
-- name: Create pxelinux.cfg directory
-  file:
+- name: Create the pxelinux.cfg directory
+  ansible.builtin.file:
     path: /var/lib/tftpboot/pxelinux.cfg
     state: directory
-    mode: 0755
     owner: root
     group: root
+    mode: "0755"
 
-- name: Copy default PXE config file
-  template:
+- name: Render the PXE boot menu
+  ansible.builtin.template:
     src: default.j2
     dest: /var/lib/tftpboot/pxelinux.cfg/default
-    mode: 0644
     owner: root
     group: root
+    mode: "0644"
 
-- name: Make sure Kicsktart web root directory exists and create if not
-  file:
+- name: Create the kickstart web directory
+  ansible.builtin.file:
     path: /var/www/html/kickstart
     state: directory
-    mode: 0755
     owner: apache
     group: apache
+    mode: "0755"
 
-- name: Copy Kickstart files
-  template:
-    src: "{{ item }}.cfg.j2"
-    dest: "/var/www/html/kickstart/{{ item }}.cfg"
-    mode: 0644
+- name: Deploy kickstart files
+  ansible.builtin.template:
+    src: "{{ item.name }}.cfg.j2"
+    dest: "/var/www/html/kickstart/{{ item.name }}.cfg"
     owner: apache
     group: apache
-  loop:
-    - centos7-base
-    - centos8-base
-    - fedora-base
+    mode: "0644"
+  loop: "{{ pxe_kickstarts }}"

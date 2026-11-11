@@ -1,43 +1,43 @@
 ---
-# defaults file for mariuszczyz.centos-pxe
+# defaults file for centos-pxe
+#
+# meta/argument_specs.yml validates input and documents every variable.
+# The values below are the applied defaults; user vars override them.
 
-# Refer to README.md for detailed explanation of each variable.
+pxe_isos_path: /isos
 
-# PXE ROLE SECTION
-# name: name of the operating system
-# iso_location: location on the PXE boot server where OS installation ISO images are stored
-# mount_point - this is where the installation ISO will be mounted,
-#               needed by Apache to serve packages during the unattenaded installation process.
+pxe_isos:
+  - name: el9
+    download_url: https://dl.rockylinux.org/pub/rocky/9/isos/x86_64/Rocky-9-latest-x86_64-dvd.iso
+    iso_path: /isos/Rocky-9-latest-x86_64-dvd.iso
+    mount_point: /var/www/html/el9
+  - name: el10
+    download_url: https://dl.rockylinux.org/pub/rocky/10/isos/x86_64/Rocky-10-latest-x86_64-dvd.iso
+    iso_path: /isos/Rocky-10-latest-x86_64-dvd.iso
+    mount_point: /var/www/html/el10
+  - name: fedora
+    download_url: https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Server/x86_64/iso/Fedora-Server-dvd-x86_64-44-1.7.iso
+    iso_path: /isos/Fedora-Server-dvd-x86_64-44-1.7.iso
+    mount_point: /var/www/html/fedora
 
-ISOS_PATH: /isos
+pxe_kickstarts:
+  - name: el9-base
+    iso: el9
+    label: Base unattended EL9 kickstart install (text mode)
+  - name: el10-base
+    iso: el10
+    label: Base unattended EL10 kickstart install (text mode)
+  - name: fedora-base
+    iso: fedora
+    label: Base unattended Fedora kickstart install (text mode)
 
-ISOS:
-- NAME: centos7
-  ISO_DOWNLOAD_URL: http://mirrors.gigenet.com/centos/7.7.1908/isos/x86_64/CentOS-7-x86_64-Everything-1908.iso
-  ISO_LOCATION: /isos/CentOS-7-x86_64-Everything-1908.iso
-  MOUNT_POINT: /var/www/html/centos7
-- NAME: centos8
-  ISO_DOWNLOAD_URL: http://mirrors.gigenet.com/centos/8/isos/x86_64/CentOS-8-x86_64-1905-dvd1.iso
-  ISO_LOCATION: /isos/CentOS-8-x86_64-1905-dvd1.iso
-  MOUNT_POINT: /var/www/html/centos8
-- NAME: fedora31
-  ISO_DOWNLOAD_URL: https://mirror.steadfastnet.com/fedora/releases/31/Server/x86_64/iso/Fedora-Server-dvd-x86_64-31-1.9.iso
-  ISO_LOCATION: /isos/Fedora-Server-dvd-x86_64-31-1.9.iso
-  MOUNT_POINT: /var/www/html/fedora31
+pxe_ntp_servers: ""
 
-KICKSTART_HASHED_ROOT_PASSWORD:
-NON_ROOT_USER_NAME:
-NON_ROOT_USER_PASSWORD:
-TIMEZONE:
-NTP_SERVERS:
+pxe_el9_hostname: el9.home.local
+pxe_el9_install_url: "http://{{ ansible_default_ipv4['address'] }}/el9"
 
-FEDORA_HOSTNAME: fedora.home.local
-FEDORA_NETWORK_INSTALLATION_URL: http://{{ ansible_default_ipv4.address }}/fedora31
+pxe_el10_hostname: el10.home.local
+pxe_el10_install_url: "http://{{ ansible_default_ipv4['address'] }}/el10"
 
-CENTOS7_HOSTNAME: centos7.home.local
-CENTOS7_NETWORK_INSTALLATION_URL: http://{{ ansible_default_ipv4.address }}/centos7
-
-# CentOS 8 configured to use a public repo for now
-CENTOS8_HOSTNAME: centos8.home.local
-CENTOS8_BASE_OS_URL: http://mirror.steadfastnet.com/centos/8/BaseOS/x86_64/os/
-CENTOS8_APPSTREAM_REPO_URL: http://mirror.steadfastnet.com/centos/8/AppStream/x86_64/kickstart/
+pxe_fedora_hostname: fedora.home.local
+pxe_fedora_install_url: "http://{{ ansible_default_ipv4['address'] }}/fedora"

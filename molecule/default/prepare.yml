@@ -1,0 +1,9 @@
+---
+- name: Prepare
+  hosts: all
+  become: true
+  tasks:
+    - name: Install the Apache HTTP Server
+      ansible.builtin.package:
+        name: httpd
+        state: present

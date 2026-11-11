@@ -1,0 +1,13 @@
+# Molecule managed
+FROM {{ item.image }}
+
+# systemd provides /usr/sbin/init for the container; python3/sudo/iproute make
+# it Ansible-compatible.
+RUN if [ $(command -v dnf) ]; then \
+      dnf makecache && \
+      dnf --assumeyes install systemd /usr/bin/python3 /usr/bin/python3-config sudo bash iproute && \
+      dnf clean all; \
+    fi
+
+# systemd exits cleanly on SIGRTMIN+3 so podman stop does not time out.
+STOPSIGNAL SIGRTMIN+3
