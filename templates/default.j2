@@ -1,10 +1,9 @@
-# display a menu with a list of installation options
+# PXE Boot Menu Configuration
+# Supports CentOS Stream 9/10 and Fedora 40/41
+
 default menu.c32
-# show prompt, 0 - disabled, 1 - enabled
 prompt 0
-# timeout, 1 second = 10
 timeout 100
-# pick label on timeout
 ONTIMEOUT 1
 
 menu title ########## PXE Boot Menu ##########
@@ -14,32 +13,16 @@ menu label ^1) Boot from local drive. Do not install anything.
 localboot 0
 menu default
 
-label 2
-menu label ^2) Install Fedora 31 Manually with graphical GUI
-kernel fedora31/vmlinuz
-append initrd=fedora31/initrd.img method=http://{{ ansible_default_ipv4.address }}/fedora31 devfs=nomount
+{% for iso in ISOS %}
+label {{ loop.index + 1 }}
+menu label ^{{ loop.index + 1 }}) Install {{ iso.NAME }} Manually with graphical GUI
+kernel {{ iso.NAME }}/vmlinuz
+append initrd={{ iso.NAME }}/initrd.img method=http://{{ ansible_default_ipv4.address }}/{{ iso.NAME }} devfs=nomount
+{% endfor %}
 
-label 3
-menu label ^3) Install CentOS 7 Manually with graphical GUI
-kernel centos7/vmlinuz
-append initrd=centos7/initrd.img method=http://{{ ansible_default_ipv4.address }}/centos7 devfs=nomount
-
-label 4
-menu label ^4) Install CentOS 8 Manually with graphical GUI
-kernel centos8/vmlinuz
-append initrd=centos8/initrd.img method=http://{{ ansible_default_ipv4.address }}/centos8 devfs=nomount
-
-label 5
-menu label ^5) Base Unattended Fedora 31 Kickstart Install in Text Mode
-kernel fedora31/vmlinuz
-append vga=normal initrd=fedora31/initrd.img ks=http://{{ ansible_default_ipv4.address }}/kickstart/fedora-base.cfg ksdevice=bootif
-
-label 5
-menu label ^5) Base Unattended CentOS 7 Kickstart Install in Text Mode
-kernel centos7/vmlinuz
-append vga=normal initrd=centos7/initrd.img ks=http://{{ ansible_default_ipv4.address }}/kickstart/centos7-base.cfg ksdevice=bootif
-
-label 6
-menu label ^6) Base Unattended CentOS 8 Kickstart Install in Text Mode
-kernel centos8/vmlinuz
-append vga=normal initrd=centos8/initrd.img ks=http://{{ ansible_default_ipv4.address }}/kickstart/centos8-base.cfg ksdevice=bootif
+{% for iso in ISOS %}
+label {{ loop.index + 1 + ISOS|length }}
+menu label ^{{ loop.index + 1 + ISOS|length }}) Unattended {{ iso.NAME }} Kickstart Install in Text Mode
+kernel {{ iso.NAME }}/vmlinuz
+append vga=normal initrd={{ iso.NAME }}/initrd.img ks=http://{{ ansible_default_ipv4.address }}/kickstart/{{ iso.NAME }}-base.cfg ksdevice=bootif
+{% endfor %}
